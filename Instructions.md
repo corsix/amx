@@ -65,7 +65,7 @@ Some instructions can operate in multiple distinct modes. In these cases, the in
 |Instruction|General theme|Writemask|Optional special features|
 |---|---|---|---|
 |[`extrx`](extr_x.md)|`x[i] = y[i]`|None|
-|[`extry`](extr_x.md)|`y[i] = x[i]`|None|
+|[`extry`](extr_y.md)|`y[i] = x[i]`|None|
 |[`extrh`&nbsp;(26=0)](extr_h.md)|<code>x[i] =&nbsp;&nbsp;&nbsp;z[_][i]&nbsp;</code>|7 bit|
 |[`extrh`&nbsp;(26=1,10=0)](extr_h.md)|`x[i] = f(z[_][i])`|9 bit|Integer right shift, integer saturation|
 |[`extrv`&nbsp;(26=1,10=0)](extr_v.md)|`x[j] = f(z[j][_])`|9 bit|Integer right shift, integer saturation|
