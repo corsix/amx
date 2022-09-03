@@ -72,20 +72,35 @@ static void inject_state(const amx_state* src) {
 
 // Test bindings
 
-#define TEST_BINDING(op) \
-    static void test_##op(amx_state* state, uint64_t operand) { \
+typedef struct ldst_test_buffer {
+    uint8_t bytes[256 + 128];
+} ldst_test_buffer;
+
+#define TEST_BINDING_LDST(op) \
+    static void test_##op(amx_state* state, uint64_t operand, ldst_test_buffer* buf) { \
         extern void emulate_##op(amx_state* state, uint64_t operand); \
+        operand &= (0xffull << 56) | 0xff; \
+        if ((operand & (1ull << 62)) && ((#op)[7] != 'I')) operand &=~ 0x7full; \
+        operand += (uint64_t)buf; \
+        op(operand); \
+        operand += sizeof(ldst_test_buffer); \
+        emulate_##op(state, operand); \
+    }
+#define TEST_BINDING(op) \
+    static void test_##op(amx_state* state, uint64_t operand, ldst_test_buffer* buf) { \
+        extern void emulate_##op(amx_state* state, uint64_t operand); \
+        (void)buf; \
         op(operand); \
         emulate_##op(state, operand); \
     }
-TEST_BINDING(AMX_LDX)
-TEST_BINDING(AMX_LDY)
-TEST_BINDING(AMX_STX)
-TEST_BINDING(AMX_STY)
-TEST_BINDING(AMX_LDZ)
-TEST_BINDING(AMX_STZ)
-TEST_BINDING(AMX_LDZI)
-TEST_BINDING(AMX_STZI)
+TEST_BINDING_LDST(AMX_LDX)
+TEST_BINDING_LDST(AMX_LDY)
+TEST_BINDING_LDST(AMX_STX)
+TEST_BINDING_LDST(AMX_STY)
+TEST_BINDING_LDST(AMX_LDZ)
+TEST_BINDING_LDST(AMX_STZ)
+TEST_BINDING_LDST(AMX_LDZI)
+TEST_BINDING_LDST(AMX_STZI)
 TEST_BINDING(AMX_EXTRX)
 TEST_BINDING(AMX_EXTRY)
 TEST_BINDING(AMX_MAC16)
@@ -102,10 +117,9 @@ TEST_BINDING(AMX_MATFP)
 TEST_BINDING(AMX_GENLUT)
 #undef TEST_BINDING
 
-static bool run_test(const char* name, void(*fn)(amx_state*, uint64_t)) {
+static bool run_test(const char* name, void(*fn)(amx_state*, uint64_t, ldst_test_buffer*)) {
     amx_state original, emulated, actual;
-    __attribute__((aligned(256))) uint8_t mem[256 + 128];
-    bool is_mem = (memcmp(name, "AMX_LD", 6) == 0) || (memcmp(name, "AMX_ST", 6) == 0);
+    __attribute__((aligned(256))) ldst_test_buffer ldst[2];
     rand_init();
     for (int outer = 0; outer < 10000; ++outer) {
         if ((outer & 255) == 0) {
@@ -114,20 +128,15 @@ static bool run_test(const char* name, void(*fn)(amx_state*, uint64_t)) {
         }
         rand_fill(&original, sizeof(amx_state));
         memcpy(&emulated, &original, sizeof(amx_state));
+        rand_fill(ldst, sizeof(ldst_test_buffer));
+        memcpy(ldst + 1, ldst, sizeof(ldst_test_buffer));
         AMX_SET();
         inject_state(&original);
         for (int inner = 0; inner < 1000; ++inner) {
             uint64_t op = rand_next();
-            if (is_mem) {
-                op &= (0xffull << 56) | 0xff;
-                if ((op & (1ull << 62)) && name[7] != 'I') {
-                    op &=~ 0x7full;
-                }
-                op += (uint64_t)mem;
-            }
-            fn(&emulated, op);
+            fn(&emulated, op, ldst);
             capture_state(&actual);
-            if (memcmp(&actual, &emulated, sizeof(amx_state)) != 0) {
+            if (memcmp(&actual, &emulated, sizeof(amx_state)) != 0 || memcmp(ldst, ldst + 1, sizeof(ldst_test_buffer)) != 0) {
                 AMX_CLR();
                 printf("\nFailed\n");
                 return false;
