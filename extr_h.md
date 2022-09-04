@@ -39,16 +39,16 @@
 Lane widths:
 |X (or Y)|Z|63|11|Notes|
 |---|---|---|---|---|
-|any 8-bit|any 8-bit|`0`|`0`|
-|any 32-bit|any 32-bit|`0`|`8`|
+|i8 or u8|i8 or u8|`0`|`0`|
+|i32 or u32|i32 or u32|`0`|`8`|
 |i16 or u16|i32 or u32 (two rows, interleaved pair)|`0`|`9`|Shift and saturation supported|
 |i16 or u16|i32 or u32 (four rows, interleaved pair from those)|`0`|`10`|Shift and saturation supported|
 |i8 or u8|i32 or u32 (four rows, interleaved quartet)|`0`|`11`|Shift and saturation supported|
 |i8 or u8|i16 or u16 (two rows, interleaved pair)|`0`|`13`|Shift and saturation supported|
-|any 16-bit|any 16-bit|`0`|anything else|
-|any 64-bit|any 64-bit|`1`|`1`|
-|any 32-bit|any 32-bit|`1`|`8`|
-|any 16-bit|any 16-bit|`1`|anything else|
+|i16 or u16|i16 or u16|`0`|anything else|
+|f64|f64|`1`|`1`|
+|f32|f32|`1`|`8`|
+|f16|f16|`1`|anything else|
 
 Write enable modes (with regard to X or Y):
 |Mode|Meaning of value (N)|
