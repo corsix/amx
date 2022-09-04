@@ -127,7 +127,7 @@ When 47=8, FMA is performed with 8-bit multiplicands, accumlating onto 16-bit or
 <tr><td>Y<sub>3</sub></td><td colspan="4">Z<sub>3,0:3</sub> += X<sub>3</sub> × Y<sub>0</sub></td>
 </table>
 
-For 16-bit Z, each 2 by 2 block of btyes ends up looking like:
+For 16-bit Z, each 2 by 2 block of bytes ends up looking like:
 
 <table><tr><td/><td>X<sub>0</sub></td><td>X<sub>1</sub></td></tr>
 <tr><td>Y<sub>0</sub></td><td colspan="2">Z<sub>0,0:1</sub> += X<sub>0</sub> × Y<sub>0</sub></tr>
