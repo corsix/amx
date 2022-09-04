@@ -85,6 +85,8 @@ For vectors of 64 elements (i.e. `i8[64]` or `u8[64]`), the four available shuff
 <tr><th>S3</th><td>0</td><td>8</td><td>16</td><td>24</td><td>32</td><td>40</td><td>48</td><td>56</td><td>1</td><td>9</td><td>17</td><td>25</td><td>33</td><td>41</td><td>49</td><td>57</td><td>2</td><td>10</td><td>18</td><td>26</td><td>34</td><td>42</td><td>50</td><td>58</td><td>3</td><td>11</td><td>19</td><td>27</td><td>35</td><td>43</td><td>51</td><td>59</td><td>4</td><td>12</td><td>20</td><td>28</td><td>36</td><td>44</td><td>52</td><td>60</td><td>5</td><td>13</td><td>21</td><td>29</td><td>37</td><td>45</td><td>53</td><td>61</td><td>6</td><td>14</td><td>22</td><td>30</td><td>38</td><td>46</td><td>54</td><td>62</td><td>7</td><td>15</td><td>23</td><td>31</td><td>39</td><td>47</td><td>55</td><td>63</td></tr>
 </table>
 
+In all cases, S0 is the identity, S1 moves lane 1 to lane 2, S2 moves lane 1 to lane 4, and S3 moves lane 1 to lane 8.
+
 ## Per-byte write-enable
 
 Most instructions support writing to only a subset of the output lanes, leaving the other lanes unchanged. This is controlled by a combination of a mode field and a value field. Said fields typically combine along the lines of:
@@ -106,7 +108,7 @@ Matrix operations have separate write-enable for the X axis and the Y axis, with
 
 When the element size is identical between X and Y and Z, indexing is simple. Assume an element size in bits (ES) of 8, 16, 32, or 64 for all three, then X and Y have N elements, where N = 512 / ES. In vector mode, a single Z register also has N elements. In matrix mode, a 2D grid of N<sup>2</sup> values is used from Z: N distinct registers from Z, each containing N elements. The N distinct registers are equally spaced in the Y dimension, with spacing 64 / N (the user can choose the starting row, subject to 0 ≤ starting row < 64 / N).
 
-When the element sizes are mixed (for example f16 × f16 ↦ f32 or i8 × i16 ↦ i32), then things are more complex. Either more Z registers need to be used (to make space for all the outputs), or some lanes from X and/or Y need to be dropped (because otherwise there is not space for all the outputs), or a combination of both.
+When the element sizes are mixed (for example f16 × f16 ↦ f32 or i8 × i16 ↦ i32), then things are more complex. Either more Z registers need to be used (to make space for all the outputs), or some lanes from X and/or Y need to be dropped (because otherwise there is not space for all the outputs), or a combination of both. When lanes are dropped, it is typical to keep just the even lanes, or keep just one lane from every four (i.e. keep lanes 0, 4, 8, etc). Shuffles can be used to select different lanes; for example after applying shuffle S1 and then keeping just the even lanes, the result is lanes 0, 1, 2, etc; and after applying shuffle S2 and then keeping just one lane from every four then the result is lanes 0, 1, 2, etc. Alternatively, byte offsets on the input operands can be used to select different lanes: adding a byte offset equal to one lane turns even lanes into odd lanes, and turns lanes 0, 4, 8, etc into 1, 5, 9, etc.
 
 One particularly common mixed-width combination is X and Y having element size of 16 bits (i.e. i16 or u32 or f16) and Z having element size 32 bits (i.e. i32 or u32 or f32). In this case, both X and Y have 32 elements, and every Z register has 16 elements. The complete outer product of X and Y would need 32<sup>2</sup> Z values, which there is _just_ space for: use all 64 Z registers, with 16 elements in each. Each 4 by 4 block of bytes ends up looking like:
 
