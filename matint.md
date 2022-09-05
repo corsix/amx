@@ -62,7 +62,7 @@ ALU modes:
 |`sat(z-((x*y*2)>>16))`|`6`|Shift is rounding, saturation is signed|
 |no-op|`7`|
 |`z+((x*y)>>s)`|`8`|Same as `0`, but different lane width modes|
-|`z+popcnt(~(x^y))`|`9`|
+|`z+popcnt(~(x^y))`|`9`|See [XNOR-Net](https://arxiv.org/abs/1603.05279)|
 |no-op|anything else|
 
 When ALU mode < 4, lane width modes:
