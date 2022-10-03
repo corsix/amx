@@ -10,7 +10,7 @@ The research was done on an Apple M1 Max (2021). Older or newer chips might have
 
 A good one-image summary of AMX is the following figure from [abandoned patent US20180074824A1](https://patents.google.com/patent/US20180074824A1/en). Consider a 32x32 grid of compute units, where each unit can perform 16-bit multiply-accumulate, or a 2x2 subgrid of units can perform 32-bit multiply-accumulate, or a 4x4 subgrid can perform 64-bit multiply-accumulate. To feed this grid, there is a pool of X registers each containing 32 16-bit elements (or 16 32-bit elements, or 8 64-bit elements) and a pool of Y registers similarly containing 32 16-bit elements (or 16 32-bit elements, or 8 64-bit elements). A single instruction can perform a full outer product: multiply every element of an X register with every element of a Y register, and accumulate with the Z element in the corresponding position.
 
-![US20180074824A1 Figure 2](/fig2.png)
+![US20180074824A1 Figure 2](fig2.png)
 
 A single row of the 32x32 grid can also be used to perform vector operations (rather than matrix operations) between X and Y<sup>T</sup>.
 
@@ -20,8 +20,8 @@ In terms of available data types, the general pattern is:
 - Integer 8-bit or 16-bit multiplicands, accumulating onto 16 or 32 bits (in various signednesses)
 
 This repository provides:
-- [A tiny header for accessing AMX instructions](/aarch64.h) (use at your own risk)
-- [A description of the register file](/RegisterFile.md)
-- [A full description of every instruction](/Instructions.md)
+- [A tiny header for accessing AMX instructions](aarch64.h) (use at your own risk)
+- [A description of the register file](RegisterFile.md)
+- [A full description of every instruction](Instructions.md)
 - [C code matching the behaviour of every instruction](test.md) (using inline ARMv8 assembly to express certain things)
-- [References for further reading](/References.md)
+- [References for further reading](References.md)
