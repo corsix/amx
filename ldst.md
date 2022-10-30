@@ -24,7 +24,7 @@ For `ldx` / `ldy` / `stx` / `sty`:
 |Bit|Width|Meaning|
 |---:|---:|---|
 |63|1|Ignored|
-|62|1|Load / store pair or registers (`1`) or single register (`0`)|
+|62|1|Load / store pair of registers (`1`) or single register (`0`)|
 |59|3|Ignored|
 |56|3|X / Y register index|
 |0|56|Pointer|
@@ -34,7 +34,7 @@ For `ldz` / `stz`:
 |Bit|Width|Meaning|
 |---:|---:|---|
 |63|1|Ignored|
-|62|1|Load / store pair or registers (`1`) or single register (`0`)|
+|62|1|Load / store pair of registers (`1`) or single register (`0`)|
 |56|6|Z row|
 |0|56|Pointer|
 
