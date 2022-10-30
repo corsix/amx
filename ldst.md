@@ -14,7 +14,7 @@
 |Bit|Width|Meaning|Notes|
 |---:|---:|---|---|
 |10|22|[A64 reserved instruction](aarch64.md)|Must be `0x201000 >> 10`|
-|5|5|Instruction|`0` for `ldx`<br/>`1` for `ldx`<br/>`2` for `stx`<br/>`3` for `sty`<br/>`4` for `ldz`<br/>`5` for `stz`<br/>`6` for `ldzi`<br/>`7` for `stzi`|
+|5|5|Instruction|`0` for `ldx`<br/>`1` for `ldy`<br/>`2` for `stx`<br/>`3` for `sty`<br/>`4` for `ldz`<br/>`5` for `stz`<br/>`6` for `ldzi`<br/>`7` for `stzi`|
 |0|5|5-bit GPR index|See below for the meaning of the 64 bits in the GPR|
 
 ## Operand bitfields
