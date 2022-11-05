@@ -24,7 +24,7 @@
 |56|1|Z saturation is signed (`1`) or unsigned (`0`)|Only applies in mixed lane-width modes, ignored otherwise|
 |55|1|Saturate Z (`1`) or truncate Z (`0`)|Only applies in mixed lane-width modes, ignored otherwise|
 |54|1|Right shift is rounding (`1`) or truncating (`0`)|Only applies in mixed lane-width modes, ignored otherwise|
-|39|15|Ignored|
+|41|13|Ignored|
 |38|3|Write enable mode|
 |32|6|Write enable value|Meaning dependent upon associated mode|
 |27|5|Ignored|

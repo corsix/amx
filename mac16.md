@@ -29,6 +29,7 @@
 |39|2|Ignored|
 |37|2|Y enable mode|Ignored in vector mode|
 |32|5|Y enable value|Ignored in vector mode<br/>Meaning dependent upon associated mode|
+|30|2|Ignored|
 |29|1|Skip X input (`1`) or use X input (`0`)|
 |28|1|Skip Y input (`1`) or use Y input (`0`)|
 |27|1|Skip Z input (`1`) or use Z input (`0`)|
