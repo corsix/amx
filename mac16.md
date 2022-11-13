@@ -142,3 +142,59 @@ int64_t mac32_alu(int64_t x, int64_t y, int64_t z, uint64_t operand) {
     return val;
 }
 ```
+
+## Performance (M1 Max)
+
+Note that multiply-and-add counts as _two_ operations. A measurement of 1.0 GOPS would mean 10<sup>9</sup> operations per second. The measurements are done without any load or store instructions; real-world workloads will need loads and stores, and thus will achieve lower numbers.
+
+`mac16` in matrix mode, with both of X and Y being i8, and each Z accumulator being `i16[32][32]`:
+
+|Z Accumulators|1 Thread|2 Threads|3 Threads|4 Threads|5 Threads|6 Threads|
+|---:|---:|---:|---:|---:|---:|---:|
+|1 per thread|1450.7 GOPS|2885.9 GOPS|2697.9 GOPS|3566.1 GOPS|4434.0 GOPS|5199.1 GOPS|
+|2 per thread|2964.4 GOPS|5821.3 GOPS|4866.4 GOPS|6196.0 GOPS|5601.5 GOPS|6286.5 GOPS|
+
+`mac16` in matrix mode, with X or Y or both being i16, and each Z accumulator being `i16[32][32]`:
+
+|Z Accumulators|1 Thread|2 Threads|3 Threads|4 Threads|5 Threads|6 Threads|
+|---:|---:|---:|---:|---:|---:|---:|
+|1 per thread|1459.3 GOPS|2290.9 GOPS|2634.3 GOPS|2370.3 GOPS|2863.8 GOPS|2875.9 GOPS|
+|2 per thread|1467.4 GOPS|2362.0 GOPS|2556.9 GOPS|2303.7 GOPS|2790.0 GOPS|2907.3 GOPS|
+
+`mac16` in matrix mode, with both of X and Y being i8, and each Z accumulator being `i32[32][32]`:
+
+|Z Accumulators|1 Thread|2 Threads|3 Threads|4 Threads|5 Threads|6 Threads|
+|---:|---:|---:|---:|---:|---:|---:|
+|1 per thread|1476.7 GOPS|2908.5 GOPS|2647.6 GOPS|2184.1 GOPS|2806.8 GOPS|2892.8 GOPS|
+
+`mac16` in matrix mode, with X or Y or both being i16, and each Z accumulator being `i32[32][32]`:
+
+|Z Accumulators|1 Thread|2 Threads|3 Threads|4 Threads|5 Threads|6 Threads|
+|---:|---:|---:|---:|---:|---:|---:|
+|1 per thread|1454.4 GOPS|2947.7 GOPS|2198.5 GOPS|2397.4 GOPS|2730.1 GOPS|2844.9 GOPS|
+
+`mac16` in vector mode, with both of X and Y being i8, and each Z accumulator being `i16[32]`:
+
+|Z Accumulators|1 Thread|2 Threads|3 Threads|4 Threads|5 Threads|6 Threads|
+|---:|---:|---:|---:|---:|---:|---:|
+|1 per thread|45.6 GOPS|92.6 GOPS|109.6 GOPS|129.3 GOPS|162.1 GOPS|195.4 GOPS|
+|2 per thread|91.4 GOPS|183.9 GOPS|204.6 GOPS|272.9 GOPS|385.3 GOPS|339.9 GOPS|
+|3 per thread|138.3 GOPS|277.3 GOPS|313.4 GOPS|413.1 GOPS|473.9 GOPS|477.8 GOPS|
+|4 per thread|180.4 GOPS|363.6 GOPS|416.9 GOPS|545.6 GOPS|635.5 GOPS|610.5 GOPS|
+|5 per thread|231.0 GOPS|461.2 GOPS|482.1 GOPS|642.7 GOPS|751.2 GOPS|648.2 GOPS|
+|6 per thread|278.0 GOPS|551.4 GOPS|543.4 GOPS|722.0 GOPS|771.1 GOPS|759.5 GOPS|
+|7 per thread|318.5 GOPS|644.5 GOPS|598.9 GOPS|754.3 GOPS|785.0 GOPS|792.5 GOPS|
+|8 per thread|369.8 GOPS|735.9 GOPS|669.0 GOPS|799.9 GOPS|789.6 GOPS|757.2 GOPS|
+
+`mac16` in vector mode, with X or Y or both being i16, and each Z accumulator being `i16[32]`:
+
+|Z Accumulators|1 Thread|2 Threads|3 Threads|4 Threads|5 Threads|6 Threads|
+|---:|---:|---:|---:|---:|---:|---:|
+|1 per thread|46.0 GOPS|92.6 GOPS|107.7 GOPS|142.1 GOPS|176.9 GOPS|199.9 GOPS|
+|2 per thread|92.5 GOPS|185.2 GOPS|211.4 GOPS|246.3 GOPS|281.9 GOPS|287.1 GOPS|
+|3 per thread|137.7 GOPS|277.0 GOPS|321.5 GOPS|388.3 GOPS|463.6 GOPS|415.3 GOPS|
+|4 per thread|185.5 GOPS|369.4 GOPS|425.8 GOPS|461.4 GOPS|486.6 GOPS|481.3 GOPS|
+|5 per thread|173.9 GOPS|346.1 GOPS|379.1 GOPS|426.7 GOPS|463.8 GOPS|449.3 GOPS|
+|6 per thread|185.2 GOPS|361.6 GOPS|427.5 GOPS|455.2 GOPS|476.7 GOPS|465.4 GOPS|
+|7 per thread|185.6 GOPS|368.7 GOPS|400.8 GOPS|444.5 GOPS|469.7 GOPS|455.6 GOPS|
+|8 per thread|185.1 GOPS|369.2 GOPS|413.8 GOPS|464.1 GOPS|477.5 GOPS|465.6 GOPS|
