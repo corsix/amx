@@ -161,3 +161,42 @@ _Float16 vecfp_alu16(_Float16 x, _Float16 y, _Float16 z, int alumode) {
     return z;
 }
 ```
+
+## Performance (M1 Max)
+
+Note that a fused-multiply-add counts as _two_ floating-point operations. A measurement of 1.0 GFLOPS would mean 10<sup>9</sup> floating-point operations per second. The measurements are done without any load or store instructions; real-world workloads will need loads and stores, and thus will achieve lower numbers.
+
+X and Y being `f16[32]`, each Z accumulator being `f16[32][32]`, ALU operation being `z + x*y` or `z - x*y`:
+
+|Z Accumulators|1 Thread|2 Threads|3 Threads|4 Threads|5 Threads|6 Threads|
+|---:|---:|---:|---:|---:|---:|---:|
+|1 per thread|1444.6 GFLOPS|2945.9 GFLOPS|2668.9 GFLOPS|4296.1 GFLOPS|4692.2 GFLOPS|5082.6 GFLOPS|
+|2 per thread|2944.7 GFLOPS|5856.6 GFLOPS|4857.7 GFLOPS|6150.3 GFLOPS|5565.6 GFLOPS|6186.8 GFLOPS|
+
+X and Y being `f16[32]`, each Z accumulator being `f32[32][32]`, ALU operation being `z + x*y` or `z - x*y`:
+
+|Z Accumulators|1 Thread|2 Threads|3 Threads|4 Threads|5 Threads|6 Threads|
+|---:|---:|---:|---:|---:|---:|---:|
+|1 per thread|1466.1 GFLOPS|2926.1 GFLOPS|2665.2 GFLOPS|2856.6 GFLOPS|2835.5 GFLOPS|2874.2 GFLOPS|
+
+X and Y being `f32[16]`, each Z accumulator being `f32[16][16]`, ALU operation being `z + x*y` or `z - x*y`:
+
+|Z Accumulators|1 Thread|2 Threads|3 Threads|4 Threads|5 Threads|6 Threads|
+|---:|---:|---:|---:|---:|---:|---:|
+|1 per thread|367.0 GFLOPS|725.8 GFLOPS|923.2 GFLOPS|1053.6 GFLOPS|1572.3 GFLOPS|1418.4 GFLOPS|
+|2 per thread|735.4 GFLOPS|1474.6 GFLOPS|1321.7 GFLOPS|1790.2 GFLOPS|2708.2 GFLOPS|2673.2 GFLOPS|
+|3 per thread|1095.0 GFLOPS|2215.9 GFLOPS|2010.7 GFLOPS|2469.2 GFLOPS|2865.7 GFLOPS|2861.8 GFLOPS|
+|4 per thread|1478.4 GFLOPS|2955.3 GFLOPS|2771.5 GFLOPS|2786.5 GFLOPS|2903.5 GFLOPS|2963.8 GFLOPS|
+
+X and Y being `f64[8]`, each Z accumulator being `f64[8][8]`, ALU operation being `z + x*y` or `z - x*y`:
+
+|Z Accumulators|1 Thread|2 Threads|3 Threads|4 Threads|5 Threads|6 Threads|
+|---:|---:|---:|---:|---:|---:|---:|
+|1 per thread|91.6 GFLOPS|184.9 GFLOPS|210.1 GFLOPS|329.7 GFLOPS|411.7 GFLOPS|408.6 GFLOPS|
+|2 per thread|184.7 GFLOPS|369.7 GFLOPS|334.1 GFLOPS|491.7 GFLOPS|720.2 GFLOPS|712.6 GFLOPS|
+|3 per thread|276.2 GFLOPS|553.2 GFLOPS|546.5 GFLOPS|652.4 GFLOPS|757.9 GFLOPS|685.1 GFLOPS|
+|4 per thread|364.6 GFLOPS|736.5 GFLOPS|702.4 GFLOPS|770.0 GFLOPS|767.5 GFLOPS|754.2 GFLOPS|
+|5 per thread|368.3 GFLOPS|731.0 GFLOPS|596.8 GFLOPS|763.6 GFLOPS|793.2 GFLOPS|710.5 GFLOPS|
+|6 per thread|369.5 GFLOPS|737.3 GFLOPS|776.0 GFLOPS|768.2 GFLOPS|794.7 GFLOPS|787.6 GFLOPS|
+|7 per thread|369.1 GFLOPS|738.6 GFLOPS|606.1 GFLOPS|708.7 GFLOPS|787.0 GFLOPS|792.2 GFLOPS|
+|8 per thread|369.6 GFLOPS|736.8 GFLOPS|686.6 GFLOPS|773.6 GFLOPS|779.9 GFLOPS|790.0 GFLOPS|
