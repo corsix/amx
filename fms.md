@@ -131,3 +131,7 @@ double fms64_alu(double x, double y, double z, uint64_t operand) {
     return out;
 }
 ```
+
+## Performance
+
+Identical to corresponding [fma](fma.md#performance-m1-max) instruction.
