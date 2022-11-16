@@ -32,7 +32,7 @@
 |11|9|Ignored|
 |10|1|Source is from Y (`1`) or from X (`0`)|
 |9|1|Ignored|
-|0|9|Source offset|
+|0|9|Source offset (in bytes)|
 
 Mode bits:
 |Data type (DT)|Index type (IT)|Lane count (LC)|Direction|53|Notes|

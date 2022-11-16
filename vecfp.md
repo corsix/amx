@@ -36,9 +36,9 @@
 |26|1|Ignored|
 |20|6|Z row|Low bits ignored in some lane width modes|
 |19|1|Ignored|
-|10|9|X offset|
+|10|9|X offset (in bytes)|
 |9|1|Ignored|
-|0|9|Y offset|
+|0|9|Y offset (in bytes)|
 
 ALU modes:
 |Floating-point operation|47|Notes|

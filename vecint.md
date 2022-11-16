@@ -41,9 +41,9 @@
 |(47≠4) 26|1|Y is signed (`1`) or unsigned (`0`)|
 |20|6|Z row|Low bits ignored in some lane width modes|
 |19|1|Ignored|
-|10|9|X offset|
+|10|9|X offset (in bytes)|
 |9|1|Ignored|
-|0|9|Y offset|
+|0|9|Y offset (in bytes)|
 
 ALU modes:
 |Integer operation|47|Notes|

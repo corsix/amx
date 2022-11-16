@@ -36,9 +36,9 @@
 |26|1|Ignored|
 |20|6|Z row|High bits ignored in matrix mode|
 |19|1|Ignored|
-|10|9|X offset|
+|10|9|X offset (in bytes)|
 |9|1|Ignored|
-|0|9|Y offset|
+|0|9|Y offset (in bytes)|
 
 Combinations of bits 27-29 result in various integer ALU operations:
 

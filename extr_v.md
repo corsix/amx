@@ -34,7 +34,7 @@
 |11|4|Lane width mode (lo)|See bit 63|
 |10|1|Destination is Y (`1`) or is X (`0`)|
 |9|1|Ignored|
-|0|9|Destination offset|
+|0|9|Destination offset (in bytes)|
 
 Lane widths:
 |Y (or X)|Z|63|11|Notes|
@@ -75,7 +75,7 @@ Write enable modes (with regard to X or Y):
 |26|1|Must be `0` for this decode variant|
 |20|6|Z column|The low bits can instead select the row within each cell|
 |9|11|Ignored|
-|0|9|Destination offset|Destination is always Y for this decode variant|
+|0|9|Destination offset (in bytes)|Destination is always Y for this decode variant|
 
 Lane widths:
 |Y|Z|28|

@@ -46,9 +46,9 @@
 |22|3|Ignored|Would be middle bits of Z row|
 |20|2|Z row|High bits ignored in some lane width modes|
 |19|1|Ignored|
-|10|9|X offset|
+|10|9|X offset (in bytes)|
 |9|1|Ignored|
-|0|9|Y offset|
+|0|9|Y offset (in bytes)|
 
 ALU modes:
 |Integer operation|47|Notes|
