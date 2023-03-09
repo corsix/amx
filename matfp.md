@@ -65,8 +65,8 @@ X/Y enable modes:
 |`1`|Only enable lane #N|
 |`2`|Only enable the first N lanes, or all lanes when N is zero|
 |`3`|Only enable the last N lanes, or all lanes when N is zero|
-|`4`|Only enable the first N lanes (no lanes when Z is zero)|
-|`5`|Only enable the last N lanes (no lanes when Z is zero)|
+|`4`|Only enable the first N lanes (no lanes when N is zero)|
+|`5`|Only enable the last N lanes (no lanes when N is zero)|
 |`6`|No lanes enabled|
 |`7`|No lanes enabled|
 
