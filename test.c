@@ -138,7 +138,7 @@ static bool run_test(const char* name, void(*fn)(amx_state*, uint64_t, ldst_test
             capture_state(&actual);
             if (memcmp(&actual, &emulated, sizeof(amx_state)) != 0 || memcmp(ldst, ldst + 1, sizeof(ldst_test_buffer)) != 0) {
                 AMX_CLR();
-                printf("\nFailed\n");
+                printf("\rTesting %s... Failed on iteration %d.%d (operand %#llx)\n", name, outer, inner, (long long unsigned)op);
                 return false;
             }
             memcpy(&original, &emulated, sizeof(amx_state));
@@ -163,7 +163,7 @@ static void fpcr_restore(uint64_t fpcr) {
 
 int main() {
     uint64_t old_fpcr = fpcr_init();
-#define RUN_TEST(op) if (run_test(#op, test_##op)) {} else return 1
+#define RUN_TEST(op) run_test(#op, test_##op)
     RUN_TEST(AMX_LDX);
     RUN_TEST(AMX_LDY);
     RUN_TEST(AMX_LDZ);
