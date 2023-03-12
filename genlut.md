@@ -23,7 +23,9 @@
 |59|1|Table is from Y (`1`) or from X (`0`)|
 |57|2|Ignored|
 |53|4|Mode|Data type, lane width, index width, whether generating or looking up|
-|27|26|Ignored|
+|31|22|Ignored|
+|(53=1)&nbsp;30|1|Data type is bf16 (`1`) or f16 (`0`)|M2 only (always reads as `0` on M1)|
+|27|3|Ignored|
 |26|1|Destination is Z (`1`) or is X or Y (`0`)|Ignored in generate modes; they always write to X or Y| 
 |(26=0) 25|1|Destination is Y (`1`) or is X (`0`)|
 |(26=0) 23|2|Ignored|
@@ -38,7 +40,7 @@ Mode bits:
 |Data type (DT)|Index type (IT)|Lane count (LC)|Direction|53|Notes|
 |---:|---:|---:|---|---:|---|
 |f32|u4|16|Generate|`0`|
-|f16|u5|32|Generate|`1`|
+|bf16 or f16|u5|32|Generate|`1`|M2 required for bf16. See bit 30|
 |f64|u4|8|Generate|`2`|High bit of index always generated as `0`|
 |i32|u4|16|Generate|`3`|
 |i16|u5|32|Generate|`4`|
@@ -80,7 +82,7 @@ void emulate_AMX_GENLUT(amx_state* state, uint64_t operand) {
     uint32_t ibits, ebits;
     switch (mode) {
     case  0: ibits = 4; ebits = 32; break; // generate from f32
-    case  1: ibits = 5; ebits = 16; break; // generate from f16
+    case  1: ibits = 5; ebits = 16; break; // generate from f16 (or bf16 on M2)
     case  2: ibits = 4; ebits = 64; break; // generate from f64
     case  3: ibits = 4; ebits = 32; break; // generate from i32
     case  4: ibits = 5; ebits = 16; break; // generate from i16
@@ -98,7 +100,7 @@ void emulate_AMX_GENLUT(amx_state* state, uint64_t operand) {
     }
     if (mode <= 6) {
         uint8_t vs[32]; // 8 bits per element, subsequently packed to ibits per element
-        find_first_greater_than(vs, mode, &xy, table);
+        find_first_greater_than(vs, mode, &xy, table, operand);
         pack_bits(xy.u8, vs, ibits, ebits);
         operand &=~ GENLUT_DEST_Z;
     } else {
@@ -116,7 +118,7 @@ void emulate_AMX_GENLUT(amx_state* state, uint64_t operand) {
     memcpy(dest + doff, &xy, 64);
 }
 
-void find_first_greater_than(uint8_t* vs, uint32_t mode, const amx_reg* xy, const amx_reg* table) {
+void find_first_greater_than(uint8_t* vs, uint32_t mode, const amx_reg* xy, const amx_reg* table, uint64_t operand) {
     switch (mode) {
     case 0:
         for (uint32_t i = 0; i < 16; ++i) {
