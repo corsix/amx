@@ -4,7 +4,9 @@
 #define MATFP_INDEXED_LOAD_Y (1ull << 47)
 #define MATFP_INDEXED_LOAD_4BIT (1ull << 48)
 
+float bf16_to_f32(uint32_t x);
 _Float16 vecfp_alu16(_Float16 x, _Float16 y, _Float16 z, int alumode);
+uint16_t vecfp_alu_bf16(uint16_t x, uint16_t y, uint16_t z, int alumode);
 float vecfp_alu32(float x, float y, float z, int alumode);
 double vecfp_alu64(double x, double y, double z, int alumode);
 
@@ -20,8 +22,10 @@ void emulate_AMX_MATFP(amx_state* state, uint64_t operand) {
         return;
     }
 
-    uint32_t xybits, zbits;
+    uint32_t xybits, zbits, bf16 = 0;
     switch ((operand >> 42) & 0xf) {
+    case  0: xybits = 16; if (AMX_VER >= AMX_VER_M2) { zbits = 16; bf16 = 1; } else { zbits = 16; } break;
+    case  1: xybits = 16; if (AMX_VER >= AMX_VER_M2) { zbits = 32; bf16 = 1; } else { zbits = 16; } break;
     case  3: xybits = 16; zbits = 32; break;
     case  4: xybits = 32; zbits = 32; break;
     case  7: xybits = 64; zbits = 64; break;
@@ -67,12 +71,23 @@ void emulate_AMX_MATFP(amx_state* state, uint64_t operand) {
 
     uint64_t z_row = (operand >> 20) & 7;
     if (zbits == 16) {
-        for (uint32_t j = 0; j < 32; j += 1) {
-            if (!((y_enable >> (j*xybytes)) & 1)) continue;
-            for (uint32_t i = 0; i < 32; i += 1) {
-                if (!((x_enable >> (i*xybytes)) & 1)) continue;
-                _Float16* z = &state->z[bit_select(j*2, z_row, 1)].f16[i];
-                *z = omask ? vecfp_alu16(x.f16[i], y.f16[j], *z, alumode) : 0;
+        if (bf16) {
+            for (uint32_t j = 0; j < 32; j += 1) {
+                if (!((y_enable >> (j*xybytes)) & 1)) continue;
+                for (uint32_t i = 0; i < 32; i += 1) {
+                    if (!((x_enable >> (i*xybytes)) & 1)) continue;
+                    uint16_t* z = &state->z[bit_select(j*2, z_row, 1)].u16[i];
+                    *z = omask ? vecfp_alu_bf16(x.u16[i], y.u16[j], *z, alumode) : 0;
+                }
+            }
+        } else {
+            for (uint32_t j = 0; j < 32; j += 1) {
+                if (!((y_enable >> (j*xybytes)) & 1)) continue;
+                for (uint32_t i = 0; i < 32; i += 1) {
+                    if (!((x_enable >> (i*xybytes)) & 1)) continue;
+                    _Float16* z = &state->z[bit_select(j*2, z_row, 1)].f16[i];
+                    *z = omask ? vecfp_alu16(x.f16[i], y.f16[j], *z, alumode) : 0;
+                }
             }
         }
     } else if (zbits == 32 && xybits == 16) {
@@ -81,7 +96,9 @@ void emulate_AMX_MATFP(amx_state* state, uint64_t operand) {
             for (uint32_t i = 0; i < 32; i += 1) {
                 if (!((x_enable >> (i*xybytes)) & 1)) continue;
                 float* z = &state->z[bit_select(j*2, i, 1)].f32[i >> 1];
-                *z = omask ? vecfp_alu32(x.f16[i], y.f16[j], *z, alumode) : 0;
+                float xf = bf16 ? bf16_to_f32(x.u16[i]) : x.f16[i];
+                float yf = bf16 ? bf16_to_f32(y.u16[j]) : y.f16[j];
+                *z = omask ? vecfp_alu32(xf, yf, *z, alumode) : 0;
             }
         }
     } else if (zbits == 32 && xybits == 32) {

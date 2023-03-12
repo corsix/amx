@@ -21,6 +21,10 @@ typedef __attribute__((aligned(128))) struct amx_state {
     amx_reg z[64];
 } amx_state;
 
+extern uint32_t AMX_VER;
+#define AMX_VER_M1 1
+#define AMX_VER_M2 2
+
 // Common helpers:
 
 static inline int64_t load_int(const void* src, uint32_t nbytes, uint32_t signext) {
@@ -102,3 +106,6 @@ static inline uint64_t parse_writemask(uint32_t val, uint32_t g, uint32_t maskbi
 
 #define FMA_WIDEN_16_32 (1ull << 62)
 #define FMA_VECTOR_PRODUCT (1ull << 63)
+
+#define BF16_ONE 0x3f80
+#define BF16_NAN 0x7fc0

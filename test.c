@@ -161,7 +161,20 @@ static void fpcr_restore(uint64_t fpcr) {
     __asm volatile ("msr fpcr, %0" : : "r"(fpcr));
 }
 
+uint32_t AMX_VER;
+
+static uint32_t detect_amx_hardware_version() {
+    __attribute__((aligned(256))) uint8_t buf[256];
+    buf[128] = 1;
+    AMX_SET(); // Set x[0:8] to zero
+    AMX_LDX(PTR_ROW_FLAGS(buf, 16, 1)); // On M1: copy buf[0:128] to x[0:2], on M2: copy buf[0:256] to x[0:4]
+    AMX_STX(PTR_ROW_FLAGS(buf,  2, 0)); // Copy x[2] to buf[0:64]
+    AMX_CLR();
+    return buf[0] == 1 ? AMX_VER_M2 : AMX_VER_M1;
+}
+
 int main() {
+    AMX_VER = detect_amx_hardware_version();
     uint64_t old_fpcr = fpcr_init();
 #define RUN_TEST(op) run_test(#op, test_##op)
     RUN_TEST(AMX_LDX);

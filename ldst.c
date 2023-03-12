@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #define LDST_PAIR (1ull << 62)
+#define LDST_PAIR_MEANS_FOUR (1ull << 60)
 
 static void ld_common(amx_reg* regs, uint64_t operand, uint32_t regmask) {
     uint32_t rn = (operand >> 56) & regmask;
@@ -9,6 +10,10 @@ static void ld_common(amx_reg* regs, uint64_t operand, uint32_t regmask) {
     memcpy(regs + rn, src, 64);
     if (operand & LDST_PAIR) {
         memcpy(regs + ((rn + 1) & regmask), src + 64, 64);
+        if ((AMX_VER >= AMX_VER_M2) && (operand & LDST_PAIR_MEANS_FOUR) && (regmask <= 15)) {
+            memcpy(regs + ((rn + 2) & regmask), src + 128, 64);
+            memcpy(regs + ((rn + 3) & regmask), src + 192, 64);
+        }
     }
 }
 
