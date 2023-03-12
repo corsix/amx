@@ -30,7 +30,7 @@
 |46|1|Ignored|
 |42|4|Lane width mode|Meaning dependent upon ALU mode|
 |41|1|Ignored|
-|(31=1)&nbsp;32|6|Ignored|
+|(31=1)&nbsp;35|6|Ignored|
 |(31=1)&nbsp;32|3|Broadcast mode|
 |(31=0)&nbsp;38|3|Write enable or broadcast mode|
 |(31=0)&nbsp;32|6|Write enable value or broadcast lane index|Meaning dependent upon associated mode|
