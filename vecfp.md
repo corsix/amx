@@ -27,14 +27,17 @@
 |46|1|Ignored|
 |42|4|Lane width mode||
 |41|1|Ignored|
-|38|3|Write enable or broadcast mode|
-|37|1|Ignored|
-|32|5|Write enable value or broadcast lane index|Meaning dependent upon associated mode|
-|31|1|Ignored|
+|(31=1)&nbsp;35|6|Ignored|
+|(31=1)&nbsp;32|3|Broadcast mode|
+|(31=0)&nbsp;38|3|Write enable or broadcast mode|
+|(31=0)&nbsp;37|1|Ignored|
+|(31=0)&nbsp;32|5|Write enable value or broadcast lane index|Meaning dependent upon associated mode|
+|31|1|Perform operation for multiple vectors (`1`)<br/>or just one vector (`0`)|M2 only (always reads as `0` on M1)|
 |29|2|[X shuffle](RegisterFile.md#shuffles)|
 |27|2|[Y shuffle](RegisterFile.md#shuffles)|
 |26|1|Ignored|
-|20|6|Z row|Low bits ignored in some lane width modes|
+|(31=1)&nbsp;25|1|"Multiple" means four vectors (`1`)<br/>or two vectors (`0`)|Top two bits of Z row ignored if operating on four vectors|
+|20|6|Z row|Low bits ignored in some lane width modes<br/>When 31=1, top bit or top two bits ignored|
 |19|1|Ignored|
 |10|9|X offset (in bytes)|
 |9|1|Ignored|
@@ -48,17 +51,22 @@ ALU modes:
 |`x <= 0 ? 0 : y`|`4`|Z input not used|
 |`min(x, z)`|`5`|Y input not used|
 |`max(x, z)`|`7`|Y input not used|
+|`x * y`|`10`|M2 only. Z input not used|
+|`z + x`|`11`|M2 only. Y input not used|
+|`z + y`|`12`|M2 only. X input not used|
 |no-op|anything else|
 
 Lane width modes:
-|X,Y|Z|42|
-|---|---|---|
+|X,Y|Z|42|Notes|
+|---|---|---|---|
+|bf16|bf16 (one row)|`0`|M2 only|
+|bf16|f32 (two rows, interleaved pair)|`1`|M2 only|
 |f16|f32 (two rows, interleaved pair)|`3`|
 |f32|f32 (one row)|`4`|
 |f64|f64 (one row)|`7`|
 |f16|f16 (one row)|anything else|
 
-Write enable or broadcast modes:
+Write enable or broadcast modes when 31=0:
 |Mode|Meaning of value (N)|
 |---:|---|
 |`0`|Enable all lanes (`0`), or odd lanes only (`1`), or even lanes only (`2`), or enable all lanes but override the ALU operation to `0.0` (`3`) or enable all lanes but override X values to `0.0` (`4`) or enable all lanes but override Y values to `0.0` (`5`) or no lanes enabled (anything else) |
@@ -70,9 +78,23 @@ Write enable or broadcast modes:
 |`6`|No lanes enabled|
 |`7`|No lanes enabled|
 
+Broadcast modes when 31=1:
+|Mode|X inputs|Y inputs|Other effects|
+|---:|---|---|---|
+|`0`|Consecutive registers|Consecutive registers|
+|`1`|Ignored|Ignored|Override ALU output to `0`|
+|`2`|Use same register for every iteration|Consecutive registers|
+|`3`|Consecutive registers|Use same register for every iteration|
+|`4`|Override values to `0`|Consecutive registers|
+|`5`|Consecutive registers|Override values to `0`|
+|`6`|Use same register for every iteration,<br/>and broadcast lane #0 to all lanes|Consecutive registers|
+|`7`|Consecutive registers|Use same register for every iteration,<br/>and broadcast lane #0 to all lanes|
+
 ## Description
 
-Performs a pointwise fused-multiply-add (or other ALU operation) between an X vector, a Y vector, and a Z vector, accumulating onto the Z vector. All three vectors have the same element type, either f16 or f32 or f64. Alternatively, when X and Y are both f16, Z can have type f32, in which case two rows of Z are used (see [Mixed lane widths](RegisterFile.md#mixed-lane-widths)).
+Performs a pointwise fused-multiply-add (or other ALU operation) between an X vector, a Y vector, and a Z vector, accumulating onto the Z vector. All three vectors have the same element type, either f16 or f32 or f64 (or bf16 on M2). Alternatively, when X and Y are both f16 (or bf16 on M2), Z can have type f32, in which case two rows of Z are used (see [Mixed lane widths](RegisterFile.md#mixed-lane-widths)).
+
+On M2, the whole operation can optionally be repeated multiple times, by setting bit 31. Bit 25 controls the repetition count; either two times or four times. By default, consecutive X or Y registers are used as the source operands, but broadcast mode settings can cause the same vector (or lane therein) to be used multiple times. If repeated twice, the top bit of Z row is ignored, and Z row is incremented by 32 for the 2<sup>nd</sup> iteration. If repeated four times, the top two bits of Z row are ignored, and Z row is incremented by 16 on each iteration.
 
 ## Emulation code
 
@@ -87,12 +109,23 @@ void emulate_AMX_VECFP(amx_state* state, uint64_t operand) {
     operand &=~ (1ull << 37);
 
     int alumode = (operand & VECFP_INDEXED_LOAD) ? 0 : (operand >> 47) & 0x3f;
-    if (alumode == 2 || alumode == 3 || alumode == 6 || alumode >= 8) {
+    switch (alumode) {
+    case 0: case 1: case 4: case 5: case 7:
+        break;
+    case 10: case 11: case 12:
+        if (AMX_VER >= AMX_VER_M2) {
+            break;
+        } else {
+            return;
+        }
+    default:
         return;
     }
 
-    uint32_t xybits, zbits;
+    uint32_t xybits, zbits, bf16 = 0;
     switch ((operand >> 42) & 0xf) {
+    case  0: xybits = 16; if (AMX_VER >= AMX_VER_M2) { zbits = 16; bf16 = 1; } else { zbits = 16; } break;
+    case  1: xybits = 16; if (AMX_VER >= AMX_VER_M2) { zbits = 32; bf16 = 1; } else { zbits = 16; } break;
     case  3: xybits = 16; zbits = 32; break;
     case  4: xybits = 32; zbits = 32; break;
     case  7: xybits = 64; zbits = 64; break;
@@ -100,48 +133,77 @@ void emulate_AMX_VECFP(amx_state* state, uint64_t operand) {
     }
     uint32_t xybytes = xybits / 8;
 
-    amx_reg x;
-    amx_reg y;
-    load_xy_reg(&x, state->x, (operand >> 10) & 0x1FF);
-    load_xy_reg(&y, state->y, operand & 0x1FF);
-    if (operand & VECFP_INDEXED_LOAD) {
-        uint32_t src_reg = (operand >> 49) & 7;
-        uint32_t ibits = (operand & VECFP_INDEXED_LOAD_4BIT) ? 4 : 2;
-        if (operand & VECFP_INDEXED_LOAD_Y) {
-            load_xy_reg_indexed(y.u8, state->y[src_reg].u8, ibits, xybits);
+    uint64_t z_row = operand >> 20;
+    uint64_t z_step = 64;
+    uint64_t x_step = 64;
+    uint64_t y_step = 64;
+    int32_t ximask = -1;
+    if ((AMX_VER >= AMX_VER_M2) && (operand & (1ull << 31))) {
+        uint64_t bmode = (operand >> 32) & 0x7;
+        operand &=~ (0x1ffull << 32);
+        switch (bmode) {
+        case 1: operand |= 3ull << 32; break; // override ALU operation to 0
+        case 2: x_step = 0; break; // same x vector for all operations
+        case 3: y_step = 0; break; // same y vector for all operations
+        case 4: operand |= 4ull << 32; break; // override x operand to zero
+        case 5: operand |= 5ull << 32; break; // override y operand to zero
+        case 6: x_step = 0; ximask = 0; break; // use lane 0 of x vector 0 for all operations
+        case 7: y_step = 0; operand |= 1ull << 38; break; // use lane 0 of y vector 0 for all operations
+        }
+        z_step = z_row & 32 ? 16 : 32;
+    }
+
+    uint64_t x_offset = operand >> 10;
+    uint64_t y_offset = operand;
+    for (z_row &= z_step - 1; z_row <= 63; z_row += z_step) {
+        amx_reg x;
+        amx_reg y;
+        load_xy_reg(&x, state->x, x_offset & 0x1FF); x_offset += x_step;
+        load_xy_reg(&y, state->y, y_offset & 0x1FF); y_offset += y_step;
+        if (operand & VECFP_INDEXED_LOAD) {
+            uint32_t src_reg = (operand >> 49) & 7;
+            uint32_t ibits = (operand & VECFP_INDEXED_LOAD_4BIT) ? 4 : 2;
+            if (operand & VECFP_INDEXED_LOAD_Y) {
+                load_xy_reg_indexed(y.u8, state->y[src_reg].u8, ibits, xybits);
+                y_offset -= y_step - y_step * ibits / xybits;
+            } else {
+                load_xy_reg_indexed(x.u8, state->x[src_reg].u8, ibits, xybits);
+                x_offset -= x_step - x_step * ibits / xybits;
+            }
+        }
+        xy_shuffle(x.u8, (operand >> 29) & 3, xybytes);
+        xy_shuffle(y.u8, (operand >> 27) & 3, xybytes);
+
+        uint64_t x_enable = parse_writemask(operand >> 32, xybytes, 9);
+        bool broadcast_y = ((operand >> (32+6)) & 7) == 1;
+        int32_t omask = -1;
+        if (broadcast_y) {
+            x_enable = ~(uint64_t)0;
+        } else if (((operand >> (32+6)) & 7) == 0) {
+            uint32_t val = (operand >> 32) & 0x3F;
+            if (val == 3) {
+                omask = 0;
+            } else if (val == 4) {
+                memset(&x, 0, 64);
+            } else if (val == 5) {
+                memset(&y, 0, 64);
+            }
+        }
+
+        if (zbits == 16) {
+            if (bf16) {
+                ...
+            } else {
+                for (uint32_t i = 0; i < 32; i += 1) {
+                    if (!((x_enable >> (i*xybytes)) & 1)) continue;
+                    uint32_t j = broadcast_y ? ((operand >> 32) & 0x1f) : i;
+                    _Float16* z = &state->z[z_row].f16[i];
+                    *z = omask ? vecfp_alu16(x.f16[i & ximask], y.f16[j], *z, alumode) : 0;
+                }
+            }
         } else {
-            load_xy_reg_indexed(x.u8, state->x[src_reg].u8, ibits, xybits);
+            ...
         }
-    }
-    xy_shuffle(x.u8, (operand >> 29) & 3, xybytes);
-    xy_shuffle(y.u8, (operand >> 27) & 3, xybytes);
-
-    uint64_t x_enable = parse_writemask(operand >> 32, xybytes, 9);
-    bool broadcast_y = ((operand >> (32+6)) & 7) == 1;
-    int32_t omask = -1;
-    if (broadcast_y) {
-        x_enable = ~(uint64_t)0;
-    } else if (((operand >> (32+6)) & 7) == 0) {
-        uint32_t val = (operand >> 32) & 0x3F;
-        if (val == 3) {
-            omask = 0;
-        } else if (val == 4) {
-            memset(&x, 0, 64);
-        } else if (val == 5) {
-            memset(&y, 0, 64);
-        }
-    }
-
-    uint64_t z_row = (operand >> 20) & 63;
-    if (zbits == 16) {
-        for (uint32_t i = 0; i < 32; i += 1) {
-            if (!((x_enable >> (i*xybytes)) & 1)) continue;
-            uint32_t j = broadcast_y ? ((operand >> 32) & 0x1f) : i;
-            _Float16* z = &state->z[z_row].f16[i];
-            *z = omask ? vecfp_alu16(x.f16[i], y.f16[j], *z, alumode) : 0;
-        }
-    } else {
-        ...
     }
 }
 
@@ -152,6 +214,9 @@ _Float16 vecfp_alu16(_Float16 x, _Float16 y, _Float16 z, int alumode) {
     case 4: z = (x <= (_Float16)0) ? (_Float16)0 : y; break;
     case 5: __asm("fmin %h0, %h1, %h2" : "=w"(z) : "w"(x), "w"(z)); break;
     case 7: __asm("fmax %h0, %h1, %h2" : "=w"(z) : "w"(x), "w"(z)); break;
+    case 10: z = x * y; break;
+    case 11: z = z + x; break;
+    case 12: z = z + y; break;
     }
     return z;
 }
