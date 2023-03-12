@@ -19,12 +19,24 @@
 
 ## Operand bitfields
 
-For `ldx` / `ldy` / `stx` / `sty`:
+For `ldx` / `ldy`:
 
 |Bit|Width|Meaning|
 |---:|---:|---|
 |63|1|Ignored|
-|62|1|Load / store pair of registers (`1`) or single register (`0`)|
+|62|1|Load multiple registers (`1`) or single register (`0`)|
+|61|1|Ignored|
+|60|1|On M1: Ignored ("multiple" always means two registers)<br/>On M2: "Multiple" means four registers (`1`) or two registers (`0`)|
+|59|1|Ignored|
+|56|3|X / Y register index|
+|0|56|Pointer|
+
+For `stx` / `sty`:
+
+|Bit|Width|Meaning|
+|---:|---:|---|
+|63|1|Ignored|
+|62|1|Store pair of registers (`1`) or single register (`0`)|
 |59|3|Ignored|
 |56|3|X / Y register index|
 |0|56|Pointer|
@@ -49,7 +61,7 @@ For `ldzi` / `stzi`:
 
 ## Description
 
-Move 64 bytes of data between memory (does not have to be aligned) and an AMX register, or move 128 bytes of data between memory (must be aligned to 128 bytes) and an adjacent pair of AMX registers.
+Move 64 bytes of data between memory (does not have to be aligned) and an AMX register, or move 128 bytes of data between memory (must be aligned to 128 bytes) and an adjacent pair of AMX registers. On M2, can also move 256 bytes of data from memory to four consecutive X or Y registers.
 
 The `ldzi` and `stzi` instructions manipulate _half_ of a _pair_ of Z registers. Viewing the 64 bytes of memory and the 64 bytes of every Z register as vectors of i32 / u32 / f32, the mapping between memory and Z is:
 
@@ -77,6 +89,10 @@ void ld_common(amx_reg* regs, uint64_t operand, uint32_t regmask) {
     memcpy(regs + rn, src, 64);
     if (operand & LDST_PAIR) {
         memcpy(regs + ((rn + 1) & regmask), src + 64, 64);
+        if ((AMX_VER >= AMX_VER_M2) && (operand & LDST_PAIR_MEANS_FOUR) && (regmask <= 15)) {
+            memcpy(regs + ((rn + 2) & regmask), src + 128, 64);
+            memcpy(regs + ((rn + 3) & regmask), src + 192, 64);
+        }
     }
 }
 ```
