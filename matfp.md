@@ -51,8 +51,10 @@ ALU modes:
 |no-op|anything else|
 
 Lane width modes:
-|X,Y|Z|42|
-|---|---|---|
+|X,Y|Z|42|Notes|
+|---|---|---|---|
+|bf16|bf16 (one row from each two)|`0`|M2 only|
+|bf16|f32 (all rows, interleaved pairs)|`1`|M2 only|
 |f16|f32 (all rows, interleaved pairs)|`3`|
 |f32|f32 (one row from each four)|`4`|
 |f64|f64 (one row from each eight)|`7`|
@@ -72,7 +74,7 @@ X/Y enable modes:
 
 ## Description
 
-Performs a fused-multiply-add (or other ALU operation) outer-product between an X vector, a Y vector, and a 2D grid of Z values, accumulating onto Z. All three of X and Y and Z have the same element type, either f16 or f32 or f64. Alternatively, when X and Y are both f16, Z can have type f32, in which case the entire 64x64 byte grid of Z is used, with even lanes of X going into even Z registers and odd lanes of X going into odd Z registers (see [Mixed lane widths](RegisterFile.md#mixed-lane-widths)).
+Performs a fused-multiply-add (or other ALU operation) outer-product between an X vector, a Y vector, and a 2D grid of Z values, accumulating onto Z. All three of X and Y and Z have the same element type, either f16 or f32 or f64 (or bf16 on M2). Alternatively, when X and Y are both f16 (or bf16 on M2), Z can have type f32, in which case the entire 64x64 byte grid of Z is used, with even lanes of X going into even Z registers and odd lanes of X going into odd Z registers (see [Mixed lane widths](RegisterFile.md#mixed-lane-widths)).
 
 ## Emulation code
 
@@ -92,8 +94,10 @@ void emulate_AMX_MATFP(amx_state* state, uint64_t operand) {
         return;
     }
 
-    uint32_t xybits, zbits;
+    uint32_t xybits, zbits, bf16 = 0;
     switch ((operand >> 42) & 0xf) {
+    case  0: xybits = 16; if (AMX_VER >= AMX_VER_M2) { zbits = 16; bf16 = 1; } else { zbits = 16; } break;
+    case  1: xybits = 16; if (AMX_VER >= AMX_VER_M2) { zbits = 32; bf16 = 1; } else { zbits = 16; } break;
     case  3: xybits = 16; zbits = 32; break;
     case  4: xybits = 32; zbits = 32; break;
     case  7: xybits = 64; zbits = 64; break;
@@ -139,12 +143,16 @@ void emulate_AMX_MATFP(amx_state* state, uint64_t operand) {
 
     uint64_t z_row = (operand >> 20) & 7;
     if (zbits == 16) {
-        for (uint32_t j = 0; j < 32; j += 1) {
-            if (!((y_enable >> (j*xybytes)) & 1)) continue;
-            for (uint32_t i = 0; i < 32; i += 1) {
-                if (!((x_enable >> (i*xybytes)) & 1)) continue;
-                _Float16* z = &state->z[bit_select(j*2, z_row, 1)].f16[i];
-                *z = omask ? vecfp_alu16(x.f16[i], y.f16[j], *z, alumode) : 0;
+        if (bf16) {
+            ...
+        } else {
+            for (uint32_t j = 0; j < 32; j += 1) {
+                if (!((y_enable >> (j*xybytes)) & 1)) continue;
+                for (uint32_t i = 0; i < 32; i += 1) {
+                    if (!((x_enable >> (i*xybytes)) & 1)) continue;
+                    _Float16* z = &state->z[bit_select(j*2, z_row, 1)].f16[i];
+                    *z = omask ? vecfp_alu16(x.f16[i], y.f16[j], *z, alumode) : 0;
+                }
             }
         }
     } else {
