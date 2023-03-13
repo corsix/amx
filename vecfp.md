@@ -69,7 +69,7 @@ Lane width modes:
 Write enable or broadcast modes when 31=0:
 |Mode|Meaning of value (N)|
 |---:|---|
-|`0`|Enable all lanes (`0`), or odd lanes only (`1`), or even lanes only (`2`), or enable all lanes but override the ALU operation to `0.0` (`3`) or enable all lanes but override X values to `0.0` (`4`) or enable all lanes but override Y values to `0.0` (`5`) or no lanes enabled (anything else) |
+|`0`|Enable all lanes (`0`), or odd lanes only (`1`), or even lanes only (`2`), or enable all lanes but override the ALU output to `0.0` (`3`) or enable all lanes but override X values to `0.0` (`4`) or enable all lanes but override Y values to `0.0` (`5`) or no lanes enabled (anything else) |
 |`1`|Enable all lanes, but broadcast Y lane #N to all lanes of Y|
 |`2`|Only enable the first N lanes, or all lanes when N is zero|
 |`3`|Only enable the last N lanes, or all lanes when N is zero|
@@ -82,11 +82,11 @@ Broadcast modes when 31=1:
 |Mode|X inputs|Y inputs|Other effects|
 |---:|---|---|---|
 |`0`|Consecutive registers|Consecutive registers|
-|`1`|Ignored|Ignored|Override ALU output to `0`|
+|`1`|Ignored|Ignored|Override ALU output to `0.0`|
 |`2`|Use same register for every iteration|Consecutive registers|
 |`3`|Consecutive registers|Use same register for every iteration|
-|`4`|Override values to `0`|Consecutive registers|
-|`5`|Consecutive registers|Override values to `0`|
+|`4`|Override values to `0.0`|Consecutive registers|
+|`5`|Consecutive registers|Override values to `0.0`|
 |`6`|Use same register for every iteration,<br/>and broadcast lane #0 to all lanes|Consecutive registers|
 |`7`|Consecutive registers|Use same register for every iteration,<br/>and broadcast lane #0 to all lanes|
 
