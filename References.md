@@ -21,3 +21,6 @@ Patents:
 |[US10970078B2](https://patents.google.com/patent/US10970078B2/en)|Computation engine with upsize/interleave and downsize/deinterleave options|2038-05-25|
 |[US10642620B2](https://patents.google.com/patent/US10642620B2/en)|Computation engine with strided dot product (2018)|2038-07-24|
 |[US10990401B2](https://patents.google.com/patent/US10990401B2/en)|Computation engine with strided dot product (2020)|2038-04-05 (anticipated)|
+
+Academic papers:
+* [Fast polynomial multiplication using matrix multiplication accelerators with applications to NTRU on Apple M1/M3 SoCs](https://eprint.iacr.org/2024/2) - "Our work repurposes AMX to implement polynomial multiplication and applies it to the NTRU cryptosystem, setting new speed records on the Apple M1 and M3 systems-on-chip (SoCs)."
