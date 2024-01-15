@@ -1,18 +1,23 @@
 #include "emulate.h"
 #include <stdio.h>
 
-#define LDST_PAIR (1ull << 62)
-#define LDST_PAIR_MEANS_FOUR (1ull << 60)
+#define LDST_MULTIPLE (1ull << 62)
+#define LDST_NON_CONSECUTIVE (1ull << 61)
+#define LDST_MULTIPLE_MEANS_FOUR (1ull << 60)
 
 static void ld_common(amx_reg* regs, uint64_t operand, uint32_t regmask) {
     uint32_t rn = (operand >> 56) & regmask;
     const uint8_t* src = (uint8_t*)((operand << 8) >> 8);
     memcpy(regs + rn, src, 64);
-    if (operand & LDST_PAIR) {
-        memcpy(regs + ((rn + 1) & regmask), src + 64, 64);
-        if ((AMX_VER >= AMX_VER_M2) && (operand & LDST_PAIR_MEANS_FOUR) && (regmask <= 15)) {
-            memcpy(regs + ((rn + 2) & regmask), src + 128, 64);
-            memcpy(regs + ((rn + 3) & regmask), src + 192, 64);
+    if (operand & LDST_MULTIPLE) {
+        uint32_t rs = 1;
+        if ((AMX_VER >= AMX_VER_M3) && (operand & LDST_NON_CONSECUTIVE) && (regmask <= 15)) {
+            rs = (operand & LDST_MULTIPLE_MEANS_FOUR) ? 2 : 4;
+        }
+        memcpy(regs + ((rn + rs) & regmask), src + 64, 64);
+        if ((AMX_VER >= AMX_VER_M2) && (operand & LDST_MULTIPLE_MEANS_FOUR) && (regmask <= 15)) {
+            memcpy(regs + ((rn + rs*2) & regmask), src + 128, 64);
+            memcpy(regs + ((rn + rs*3) & regmask), src + 192, 64);
         }
     }
 }
@@ -21,7 +26,7 @@ static void st_common(const amx_reg* regs, uint64_t operand, uint32_t regmask) {
     uint32_t rn = (operand >> 56) & regmask;
     uint8_t* dst = (uint8_t*)((operand << 8) >> 8);
     memcpy(dst, regs + rn, 64);
-    if (operand & LDST_PAIR) {
+    if (operand & LDST_MULTIPLE) {
         memcpy(dst + 64, regs + ((rn + 1) & regmask), 64);
     }
 }

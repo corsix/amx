@@ -165,12 +165,13 @@ uint32_t AMX_VER;
 
 static uint32_t detect_amx_hardware_version() {
     __attribute__((aligned(256))) uint8_t buf[256];
+    buf[64] = 2;
     buf[128] = 1;
     AMX_SET(); // Set x[0:8] to zero
-    AMX_LDX(PTR_ROW_FLAGS(buf, 16, 1)); // On M1: copy buf[0:128] to x[0:2], on M2: copy buf[0:256] to x[0:4]
+    AMX_LDX(PTR_ROW_FLAGS(buf, 48, 1)); // On M1: copy buf[0:128] to x[0,1], on M2: copy buf[0:256] to x[0,1,2,3], on M3: copy buf[0:256] to x[0,2,4,6]
     AMX_STX(PTR_ROW_FLAGS(buf,  2, 0)); // Copy x[2] to buf[0:64]
     AMX_CLR();
-    return buf[0] == 1 ? AMX_VER_M2 : AMX_VER_M1;
+    return 1 + buf[0];
 }
 
 int main() {

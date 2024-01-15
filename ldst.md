@@ -25,8 +25,8 @@ For `ldx` / `ldy`:
 |---:|---:|---|
 |63|1|Ignored|
 |62|1|Load multiple registers (`1`) or single register (`0`)|
-|61|1|Ignored|
-|60|1|On M1: Ignored ("multiple" always means two registers)<br/>On M2: "Multiple" means four registers (`1`) or two registers (`0`)|
+|61|1|On M1/M2: Ignored (loads are always to consecutive registers)<br/>On M3: Load to non-consecutive registers (`1`) or to consecutive registers (`0`)|
+|60|1|On M1: Ignored ("multiple" always means two registers)<br/>On M2/M3: "Multiple" means four registers (`1`) or two registers (`0`)|
 |59|1|Ignored|
 |56|3|X / Y register index|
 |0|56|Pointer|
@@ -61,7 +61,7 @@ For `ldzi` / `stzi`:
 
 ## Description
 
-Move 64 bytes of data between memory (does not have to be aligned) and an AMX register, or move 128 bytes of data between memory (must be aligned to 128 bytes) and an adjacent pair of AMX registers. On M2, can also move 256 bytes of data from memory to four consecutive X or Y registers.
+Move 64 bytes of data between memory (does not have to be aligned) and an AMX register, or move 128 bytes of data between memory (must be aligned to 128 bytes) and an adjacent pair of AMX registers. On M2/M3, can also move 256 bytes of data from memory to four consecutive X or Y registers. On M3, can move 128 or 256 bytes of data from memory to non-consecutive X or Y registers: if bit 61 is set, 128 bytes are moved to registers `n` and `(n+4)%8`, or 256 bytes are moved to registers `n`, `(n+2)%8`, `(n+4)%8`, `(n+6)%8`.
 
 The `ldzi` and `stzi` instructions manipulate _half_ of a _pair_ of Z registers. Viewing the 64 bytes of memory and the 64 bytes of every Z register as vectors of i32 / u32 / f32, the mapping between memory and Z is:
 
@@ -87,11 +87,15 @@ void ld_common(amx_reg* regs, uint64_t operand, uint32_t regmask) {
     uint32_t rn = (operand >> 56) & regmask;
     const uint8_t* src = (uint8_t*)((operand << 8) >> 8);
     memcpy(regs + rn, src, 64);
-    if (operand & LDST_PAIR) {
-        memcpy(regs + ((rn + 1) & regmask), src + 64, 64);
-        if ((AMX_VER >= AMX_VER_M2) && (operand & LDST_PAIR_MEANS_FOUR) && (regmask <= 15)) {
-            memcpy(regs + ((rn + 2) & regmask), src + 128, 64);
-            memcpy(regs + ((rn + 3) & regmask), src + 192, 64);
+    if (operand & LDST_MULTIPLE) {
+        uint32_t rs = 1;
+        if ((AMX_VER >= AMX_VER_M3) && (operand & LDST_NON_CONSECUTIVE) && (regmask <= 15)) {
+            rs = (operand & LDST_MULTIPLE_MEANS_FOUR) ? 2 : 4;
+        }
+        memcpy(regs + ((rn + rs) & regmask), src + 64, 64);
+        if ((AMX_VER >= AMX_VER_M2) && (operand & LDST_MULTIPLE_MEANS_FOUR) && (regmask <= 15)) {
+            memcpy(regs + ((rn + rs*2) & regmask), src + 128, 64);
+            memcpy(regs + ((rn + rs*3) & regmask), src + 192, 64);
         }
     }
 }
