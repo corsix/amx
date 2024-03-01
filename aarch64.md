@@ -19,7 +19,7 @@ AMX instructions fit into this space like so:
 |12|4||Must be `1`|
 |10|2||Must be `0`|
 |5|5|Instruction|`0` through `22` used|
-|0|5|Operand|Either 5-bit immediate or 5-bit GPR index, depending on instruction|
+|0|5|Operand|Either 5-bit immediate or 5-bit GPR index, depending on instruction. GPR 31 denotes xzr.|
 
 Inline assembly syntax can be used to emit AMX instructions from C code. The easy case is when the operand is a 5-bit immediate:
 ```c
