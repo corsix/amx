@@ -23,4 +23,5 @@ Patents:
 |[US10990401B2](https://patents.google.com/patent/US10990401B2/en)|Computation engine with strided dot product (2020)|2038-04-05 (anticipated)|
 
 Academic papers:
-* [Fast polynomial multiplication using matrix multiplication accelerators with applications to NTRU on Apple M1/M3 SoCs](https://eprint.iacr.org/2024/2) - "Our work repurposes AMX to implement polynomial multiplication and applies it to the NTRU cryptosystem, setting new speed records on the Apple M1 and M3 systems-on-chip (SoCs)."
+* [Fast polynomial multiplication using matrix multiplication accelerators with applications to NTRU on Apple M1/M3 SoCs](https://cic.iacr.org/p/1/1/9) - "Our work repurposes AMX to implement polynomial multiplication and applies it to the NTRU cryptosystem, setting new speed records on the Apple M1 and M3 systems-on-chip (SoCs)."
+* [PQC-AMX: Accelerating Saber and FrodoKEM on the Apple M1 and M3 SoCs](https://eprint.iacr.org/2024/195) - "In this paper, we leverage AMX to accelerate the post-quantum lattice-based cryptosystems Saber and FrodoKEM, and benchmark their performance on Apple M1 and M3 SoCs."
