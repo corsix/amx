@@ -118,7 +118,7 @@ void emulate_AMX_FMS64(amx_state* state, uint64_t operand) {
 
 double fms64_alu(double x, double y, double z, uint64_t operand) {
     switch ((operand >> 27) & 7) {
-    case 1: return -x * y;
+    case 1: z = -0.; break;
     case 2: return z - x;
     case 3: return -x;
     case 4: return z - y;

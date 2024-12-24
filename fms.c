@@ -5,7 +5,7 @@
 
 static double fms64_alu(double x, double y, double z, uint64_t operand) {
     switch ((operand >> 27) & 7) {
-    case 1: return -x * y;
+    case 1: z = -0.; break;
     case 2: return z - x;
     case 3: return -x;
     case 4: return z - y;
@@ -20,7 +20,7 @@ static double fms64_alu(double x, double y, double z, uint64_t operand) {
 
 static float fms32_alu(float x, float y, float z, uint64_t operand) {
     switch ((operand >> 27) & 7) {
-    case 1: return -x * y;
+    case 1: z = -0.; break;
     case 2: return z - x;
     case 3: return -x;
     case 4: return z - y;
@@ -35,7 +35,7 @@ static float fms32_alu(float x, float y, float z, uint64_t operand) {
 
 static _Float16 fms16_alu(_Float16 x, _Float16 y, _Float16 z, uint64_t operand) {
     switch ((operand >> 27) & 7) {
-    case 1: return -x * y;
+    case 1: z = -0.; break;
     case 2: return z - x;
     case 3: return -x;
     case 4: return z - y;
