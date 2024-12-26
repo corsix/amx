@@ -79,6 +79,9 @@ void emulate_AMX_EXTRX(amx_state* state, uint64_t operand) {
         if ((AMX_VER >= AMX_VER_M2) && (operand & (1ull << 31))) {
             operand &=~ (0x1ffull << 32);
             z_step = z_row & 32 ? 16 : 32;
+            if (AMX_VER >= AMX_VER_M4) {
+                dst_offset &= -64u;
+            }
         }
         store_enable &= parse_writemask(operand >> 32, xybytes, 9);
     } else if (operand & EXTR_BETWEEN_XY) {
@@ -141,6 +144,9 @@ void emulate_AMX_EXTRY(amx_state* state, uint64_t operand) {
         if ((AMX_VER >= AMX_VER_M2) && (operand & (1ull << 31))) {
             operand &=~ (0x1ffull << 32);
             z_step = z_col & 32 ? 16 : 32;
+            if (AMX_VER >= AMX_VER_M4) {
+                dst_offset &= -64u;
+            }
         }
         store_enable &= parse_writemask(operand >> 32, xybytes, 9);
     } else if (operand & EXTR_BETWEEN_XY) {

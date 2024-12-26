@@ -44,9 +44,9 @@
 |(31=1)&nbsp;25|1|"Multiple" means four vectors (`1`)<br/>or two vectors (`0`)|Top two bits of Z row ignored if operating on four vectors|
 |20|6|Z row|Low bits ignored in some lane width modes<br/>When 31=1, top bit or top two bits ignored|
 |19|1|Ignored|
-|10|9|X offset (in bytes)|
+|10|9|X offset (in bytes)|On M4, when 31=1, some low bits ignored|
 |9|1|Ignored|
-|0|9|Y offset (in bytes)|
+|0|9|Y offset (in bytes)|On M4, when 31=1, some low bits ignored|
 
 ALU modes:
 |Integer operation|47|Notes|

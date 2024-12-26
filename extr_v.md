@@ -38,7 +38,7 @@
 |11|4|Lane width mode (lo)|See bit 63|
 |10|1|Destination is Y (`1`) or is X (`0`)|
 |9|1|Ignored|
-|0|9|Destination offset (in bytes)|
+|0|9|Destination offset (in bytes)|On M4, when 31=1, low four bits ignored|
 
 Lane widths:
 |Y (or X)|Z|63|11|Notes|
@@ -143,6 +143,9 @@ void emulate_AMX_EXTRY(amx_state* state, uint64_t operand) {
         if ((AMX_VER >= AMX_VER_M2) && (operand & (1ull << 31))) {
             operand &=~ (0x1ffull << 32);
             z_step = z_col & 32 ? 16 : 32;
+            if (AMX_VER >= AMX_VER_M4) {
+                dst_offset &= -64u;
+            }
         }
         store_enable &= parse_writemask(operand >> 32, xybytes, 9);
     } else if (operand & EXTR_BETWEEN_XY) {

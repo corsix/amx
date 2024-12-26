@@ -192,6 +192,9 @@ void emulate_AMX_VECFP(amx_state* state, uint64_t operand) {
     uint64_t x_step = 64;
     uint64_t y_step = 64;
     int32_t ximask = -1;
+    uint64_t x_offset = operand >> 10;
+    uint64_t y_offset = operand;
+    uint32_t ibits = (operand & VECFP_INDEXED_LOAD_4BIT) ? 4 : 2;
     if ((AMX_VER >= AMX_VER_M2) && (operand & (1ull << 31))) {
         uint64_t bmode = (operand >> 32) & 0x7;
         operand &=~ (0x1ffull << 32);
@@ -205,10 +208,38 @@ void emulate_AMX_VECFP(amx_state* state, uint64_t operand) {
         case 7: y_step = 0; operand |= 1ull << 38; break; // use lane 0 of y vector 0 for all operations
         }
         z_step = z_row & 32 ? 16 : 32;
+        if (AMX_VER >= AMX_VER_M4) {
+            if ((operand & VECFP_INDEXED_LOAD) && !(operand & VECFP_INDEXED_LOAD_Y)) {
+                // x_offset must be aligned such that the entire block of index
+                // data does not cross a 64-byte register boundary
+                x_offset &= -64u | -(512u * ibits / (xybytes * z_step));
+            } else if (bmode == 6) {
+                // x_offset must be aligned to a single element
+                x_offset &= -xybytes;
+            } else {
+                // x_offset must be aligned to an entire 64-byte register
+                x_offset &= -64u;
+            }
+            if ((operand & VECFP_INDEXED_LOAD) && (operand & VECFP_INDEXED_LOAD_Y)) {
+                // y_offset must be aligned such that the entire block of index
+                // data does not cross a 64-byte register boundary
+                y_offset &= -64u | -(512u * ibits / (xybytes * z_step));
+            } else if (bmode == 7) {
+                // y_offset must be aligned to a single element
+                y_offset &= -xybytes;
+            } else {
+                // y_offset must be aligned to an entire 64-byte register
+                y_offset &= -64u;
+            }
+        }
     }
-
-    uint64_t x_offset = operand >> 10;
-    uint64_t y_offset = operand;
+    if (operand & VECFP_INDEXED_LOAD) {
+        if (operand & VECFP_INDEXED_LOAD_Y) {
+            y_step = y_step * ibits / xybits;
+        } else {
+            x_step = x_step * ibits / xybits;
+        }
+    }
     for (z_row &= z_step - 1; z_row <= 63; z_row += z_step) {
         amx_reg x;
         amx_reg y;
@@ -216,13 +247,10 @@ void emulate_AMX_VECFP(amx_state* state, uint64_t operand) {
         load_xy_reg(&y, state->y, y_offset & 0x1FF); y_offset += y_step;
         if (operand & VECFP_INDEXED_LOAD) {
             uint32_t src_reg = (operand >> 49) & 7;
-            uint32_t ibits = (operand & VECFP_INDEXED_LOAD_4BIT) ? 4 : 2;
             if (operand & VECFP_INDEXED_LOAD_Y) {
                 load_xy_reg_indexed(y.u8, state->y[src_reg].u8, ibits, xybits);
-                y_offset -= y_step - y_step * ibits / xybits;
             } else {
                 load_xy_reg_indexed(x.u8, state->x[src_reg].u8, ibits, xybits);
-                x_offset -= x_step - x_step * ibits / xybits;
             }
         }
         xy_shuffle(x.u8, (operand >> 29) & 3, xybytes);

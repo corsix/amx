@@ -67,7 +67,7 @@ void emulate_AMX_VECINT(amx_state* state, uint64_t operand) {
     }
 
     uint64_t z_row = operand >> 20;
-    uint64_t z_step = 64;
+    uint32_t z_step = 64;
     uint64_t x_step = 64;
     uint64_t y_step = 64;
     int32_t ximask = -1;
@@ -143,6 +143,38 @@ void emulate_AMX_VECINT(amx_state* state, uint64_t operand) {
 
     uint64_t x_offset = operand >> 10;
     uint64_t y_offset = operand;
+    uint32_t ibits = (operand & VECINT_INDEXED_LOAD_4BIT) ? 4 : 2;
+    if (operand & VECINT_INDEXED_LOAD) {
+        if (operand & VECINT_INDEXED_LOAD_Y) {
+            y_step = y_step * ibits / ybits;
+        } else {
+            x_step = x_step * ibits / xbits;
+        }
+    }
+    if (AMX_VER >= AMX_VER_M4 && z_step < 64) {
+        if ((operand & VECINT_INDEXED_LOAD) && !(operand & VECINT_INDEXED_LOAD_Y)) {
+            // x_offset must be aligned such that the entire block of index
+            // data does not cross a 64-byte register boundary
+            x_offset &= -64u | -(512u * ibits / (xbytes * z_step));
+        } else if (ximask == 0) {
+            // x_offset must be aligned to a single element
+            x_offset &= -xbytes;
+        } else {
+            // x_offset must be aligned to an entire 64-byte register
+            x_offset &= -64u;
+        }
+        if ((operand & VECINT_INDEXED_LOAD) && (operand & VECINT_INDEXED_LOAD_Y)) {
+            // y_offset must be aligned such that the entire block of index
+            // data does not cross a 64-byte register boundary
+            y_offset &= -64u | -(512u * ibits / (ybytes * z_step));
+        } else if (broadcast_y) {
+            // y_offset must be aligned to a single element
+            y_offset &= -ybytes;
+        } else {
+            // y_offset must be aligned to an entire 64-byte register
+            y_offset &= -64u;
+        }
+    }
     for (; z_row <= 63; z_row += z_step) {
         uint8_t x[64];
         uint8_t y[64];
@@ -150,13 +182,10 @@ void emulate_AMX_VECINT(amx_state* state, uint64_t operand) {
         load_xy_reg(y, state->y, y_offset & 0x1FF); y_offset += y_step;
         if (operand & VECINT_INDEXED_LOAD) {
             uint32_t src_reg = (operand >> 49) & 7;
-            uint32_t ibits = (operand & VECINT_INDEXED_LOAD_4BIT) ? 4 : 2;
             if (operand & VECINT_INDEXED_LOAD_Y) {
                 load_xy_reg_indexed(y, state->y[src_reg].u8, ibits, ybits);
-                y_offset -= y_step - y_step * ibits / ybits;
             } else {
                 load_xy_reg_indexed(x, state->x[src_reg].u8, ibits, xbits);
-                x_offset -= x_step - x_step * ibits / xbits;
             }
         }
         xy_shuffle(x, (operand >> 29) & 3, xbytes);

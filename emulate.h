@@ -25,6 +25,7 @@ extern uint32_t AMX_VER;
 #define AMX_VER_M1 1
 #define AMX_VER_M2 2
 #define AMX_VER_M3 3
+#define AMX_VER_M4 4
 
 // Common helpers:
 
